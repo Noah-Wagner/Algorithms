@@ -91,7 +91,9 @@ public class RSAHandler {
         return encryptedMessage.toString();
     }
 
-    
+    public String decrypt(String message) {
+        throw new NotImplementedException();
+    }
 
 
     public class RSAKeyPublic extends RSAKey {
