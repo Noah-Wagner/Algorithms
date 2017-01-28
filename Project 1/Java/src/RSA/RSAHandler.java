@@ -60,18 +60,23 @@ public class RSAHandler {
 
 
     public String encrypt(String message) {
+        return encryptionBase(publicKey, 3, message);
+    }
+
+    public String decrypt(String message) {
+        return encryptionBase(secretKey, 4, message);
+    }
+
+    private String encryptionBase(RSAKey key, int chunkSize, String message) {
         int i = 0;
-        char[] buffer = new char[3];
-        StringBuilder encryptedMessage = new StringBuilder();
+        char[] buffer = new char[chunkSize];
+        BigIntegerStringConverter converter = new BigIntegerStringConverter();
+        StringBuilder newMessage = new StringBuilder();
         for (Character c : message.toCharArray()) {
             buffer[i++] = c;
-            if (i == 3) {
-                String bufferString = String.valueOf(buffer) + publicKey.ed;
-                BigIntegerStringConverter a = new BigIntegerStringConverter();
-                BigInteger temp = a.fromString(bufferString);
-                temp = temp.mod(n);
-                encryptedMessage.append(temp);
-//                encryptedMessage.append(BigInteger.valueOf(Integer.getInteger(bufferString)).mod(n));
+            if (i == chunkSize) {
+                String bufferString = String.valueOf(buffer) + key.ed;
+                newMessage.append(converter.fromString(bufferString).mod(n));
                 i = 0;
             }
         }
@@ -82,17 +87,10 @@ public class RSAHandler {
                 newBuffer[j] = buffer[j];
                 j++;
             }
-            String bufferString = String.valueOf(newBuffer) + publicKey.ed;
-            BigIntegerStringConverter a = new BigIntegerStringConverter();
-            BigInteger temp = a.fromString(bufferString);
-            temp = temp.mod(n);
-            encryptedMessage.append(temp);
+            String bufferString = String.valueOf(newBuffer) + key.ed;
+            newMessage.append(converter.fromString(bufferString).mod(n));
         }
-        return encryptedMessage.toString();
-    }
-
-    public String decrypt(String message) {
-        throw new NotImplementedException();
+        return newMessage.toString();
     }
 
 

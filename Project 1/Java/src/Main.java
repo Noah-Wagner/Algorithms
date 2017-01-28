@@ -6,6 +6,8 @@ public class Main {
 
     public static void main(String[] args) {
         RSAHandler handler = new RSAHandler();
-        System.out.println(handler.encrypt("6882326879666683"));
+        String s1 = handler.encrypt("6882326879666683");
+        System.out.println(s1);
+        System.out.println(handler.decrypt(s1));
     }
 }
