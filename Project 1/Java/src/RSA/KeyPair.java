@@ -2,16 +2,19 @@ package RSA;
 
 import javafx.util.converter.BigIntegerStringConverter;
 
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 
 /**
  * Created by noah on 2/13/17.
  */
 public class KeyPair {
-    final private RSAKeyPublic publicKey;
-    final private RSAKeySecret secretKey;
+    private RSAKeyPublic publicKey;
+    private RSAKeySecret secretKey;
+
+    private KeyPair() {
+
+    }
 
     KeyPair(RSAKeyPublic publicKey, RSAKeySecret secretKey) {
         this.publicKey = publicKey;
@@ -25,6 +28,30 @@ public class KeyPair {
 
     public RSAKeySecret getSecretKey() {
         return secretKey;
+    }
+
+    public static KeyPair keyPairFromFile() {
+        KeyPair keyPair = null;
+        try (BufferedReader br = new BufferedReader(new FileReader("d_n.txt"))) {
+            BigIntegerStringConverter converter = new BigIntegerStringConverter();
+            String line = br.readLine();
+            BigInteger d = converter.fromString(line);
+            line = br.readLine();
+            BigInteger n = converter.fromString(line);
+
+            try (BufferedReader br2 = new BufferedReader(new FileReader("e_n.txt"))) {
+                line = br2.readLine();
+                BigInteger e = converter.fromString(line);
+                keyPair = new KeyPair(new RSAKeyPublic(e, n), new RSAKeySecret(d, n));
+//                keyPair = new KeyPair();
+//                keyPair.publicKey = new RSAKeyPublic(d, n);
+//                keyPair.secretKey = new RSAKeySecret(e, n);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return keyPair;
     }
 
     private void writeKeyPair() {
@@ -65,13 +92,13 @@ public class KeyPair {
     }
 
 
-    static class RSAKeyPublic extends RSAKey {
+    public static class RSAKeyPublic extends RSAKey {
         RSAKeyPublic(BigInteger ed, BigInteger n) {
             super(ed, n);
         }
     }
 
-    static class RSAKeySecret extends RSAKey {
+    public static class RSAKeySecret extends RSAKey {
         RSAKeySecret(BigInteger ed, BigInteger n) {
             super(ed, n);
         }
