@@ -1,20 +1,33 @@
+/*
+ * Copyright (c) 2017 Noah Wagner.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package RSA;
 
 import javafx.util.converter.BigIntegerStringConverter;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigInteger;
 
-/**
- * Created by noah on 2/13/17.
- */
 public class KeyPair {
     private RSAKeyPublic publicKey;
     private RSAKeySecret secretKey;
-
-    private KeyPair() {
-
-    }
 
     KeyPair(RSAKeyPublic publicKey, RSAKeySecret secretKey) {
         this.publicKey = publicKey;
@@ -43,9 +56,6 @@ public class KeyPair {
                 line = br2.readLine();
                 BigInteger e = converter.fromString(line);
                 keyPair = new KeyPair(new RSAKeyPublic(e, n), new RSAKeySecret(d, n));
-//                keyPair = new KeyPair();
-//                keyPair.publicKey = new RSAKeyPublic(d, n);
-//                keyPair.secretKey = new RSAKeySecret(e, n);
             }
 
         } catch (IOException e) {
@@ -90,7 +100,6 @@ public class KeyPair {
             }
         }
     }
-
 
     public static class RSAKeyPublic extends RSAKey {
         RSAKeyPublic(BigInteger ed, BigInteger n) {

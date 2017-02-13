@@ -1,24 +1,45 @@
+/*
+ * Copyright (c) 2017 Noah Wagner.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package RSA;
 
 import javafx.util.converter.BigIntegerStringConverter;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 
 
 public class RSAHandler {
 
+    /**
+     * Generates an RSA keypair
+     * @return An RSA keypair
+     */
     public static KeyPair generateKeyPair() {
 
         BigInteger p = getRandomPrime(512);
         BigInteger q = getRandomPrime(512);
-        writeBigInt(new ArrayList<BigInteger>(Arrays.asList(p, q)));
+        writeBigInt(new ArrayList<>(Arrays.asList(p, q)));
 
         BigInteger n = p.multiply(q);
 
@@ -34,6 +55,11 @@ public class RSAHandler {
         return new KeyPair(new KeyPair.RSAKeyPublic(e, n), new KeyPair.RSAKeySecret(wrapper.x, n));
     }
 
+    /**
+     * Generates a random prime by incrementing by two
+     * @param numBits The number of bits in the random prime number
+     * @return A BigInteger object with a random prime number
+     */
     private static BigInteger getRandomPrime(int numBits) {
         BigInteger random = new BigInteger(numBits, new Random());
         random = random.setBit(0); // Required to have an odd number!
@@ -43,7 +69,11 @@ public class RSAHandler {
         return random;
     }
 
-    private static void writeBigInt(ArrayList<BigInteger> list) {
+    /**
+     * Writes BigInteger objects to a file
+     * @param list Writes all BigInteger objects in list to the file
+     */
+    private static void writeBigInt(List<BigInteger> list) {
         FileWriter fileWriter = null;
         try {
             fileWriter = new FileWriter("p_q.txt");
@@ -64,16 +94,30 @@ public class RSAHandler {
         }
     }
 
+    /**
+     *
+     * @return A coprime value for e, usually fixed at 2^16 + 1 for small Hamming weight
+     */
     private static BigInteger getCoprime() {
         return BigInteger.valueOf(65537);
     }
 
-    private static EEWrapper multiplicativeInverse(BigInteger x, BigInteger y) {
-        EEWrapper wrapper = extendedEuclid(x, y);
-        wrapper.x = wrapper.x.mod(y).add(y).mod(y);
+    /**
+     * Finds the multiplicative inverse d * e = 1 mod totient
+     * @return An EEWrapper object with the multiplicative inverse d as well as linear combination parameters
+     */
+    private static EEWrapper multiplicativeInverse(BigInteger e, BigInteger totient) {
+        EEWrapper wrapper = extendedEuclid(e, totient);
+        wrapper.x = wrapper.x.mod(totient).add(totient).mod(totient);
         return wrapper;
     }
 
+    /**
+     * Applies the Extended Euclidean Algorithm to two BigInteger objects
+     * @param a The first object to apply the algorithm to
+     * @param b The second object to apply the algorithm to
+     * @return An EEWrapper object with the GCD and linear combination parameters
+     */
     private static EEWrapper extendedEuclid(BigInteger a, BigInteger b) {
         if (b.equals(BigInteger.ZERO)) return new EEWrapper(a, BigInteger.ONE, BigInteger.ZERO);
         EEWrapper wrapper = extendedEuclid(b, a.mod(b));
@@ -92,16 +136,35 @@ public class RSAHandler {
         }
     }
 
+    /**
+     * Applies an RSA key to a message
+     * @param key RSA key to apply
+     * @param message Message to apply the RSA key to
+     * @return The message encrypted with the RSA key
+     */
     public static String applyKey(KeyPair.RSAKeyPublic key, String message) {
         return encryptionBase(key, (int) characterCount(key.n), message);
 
     }
 
+    /**
+     * Applies an RSA key to a message
+     * @param key RSA key to apply
+     * @param message Message to apply the RSA key to
+     * @return The message encrypted with the RSA key
+     */
     public static String applyKey(KeyPair.RSAKeySecret key, String message) {
         return encryptionBase(key, (int) characterCount(key.n) + 1, message);
 
     }
 
+    /**
+     * Applies an RSA key to a message
+     * @param key RSA key to apply
+     * @param chunkSize The size with which to move through the message
+     * @param message Message to apply the RSA key to
+     * @return The message encrypted with the RSA key
+     */
     private static String encryptionBase(RSAKey key, int chunkSize, String message) {
         int i = 0;
         char[] buffer = new char[chunkSize];
@@ -143,23 +206,41 @@ public class RSAHandler {
         return newMessage.toString();
     }
 
+    /**
+     * Determines whether a BigInteger object is prime
+     * @param n The BigInteger object on which to test
+     * @return The results of the test
+     */
     private static boolean isPrime(BigInteger n) {
         return fermatTest(n) && millerRabinTest(n);
     }
 
+    /**
+     * Performs the Fermat's Little Theorem primality test
+     * @param n The BigInteger object on which to test
+     * @return The results of the test
+     */
     private static boolean fermatTest(BigInteger n) {
         BigInteger a = BigInteger.valueOf(2);
         return a.modPow(n.subtract(BigInteger.ONE), n).equals(BigInteger.ONE);
     }
 
+    /**
+     * Performs the Miller Rabins primality Test
+     * @param n The BigInteger object on which to test
+     * @return The results of the test
+     */
     private static boolean millerRabinTest(BigInteger n) {
         return true;
     }
 
+    /**
+     * Counts the number of digits in a BigInteger object.
+     * @param n The BigInteger object to count the digits of.
+     * @return The number of digits in the BigInteger object
+     */
     private static long characterCount (BigInteger n) {
         return Math.round(n.bitLength() * Math.log(2)/Math.log(10));
     }
-
-
 
 }
