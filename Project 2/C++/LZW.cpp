@@ -10,25 +10,27 @@
   This code is derived for UA CS435 from LZW@RosettaCode
 */
 
+
+
 // Compress a string to a list of output symbols.
 // The result will be written to the output iterator
 // starting at "result"; the final iterator is returned.
 template <typename Iterator>
-Iterator compress(const std::string &uncompressed, Iterator result) {
+Iterator Compress(const std::string &uncompressed, Iterator result) {
     // Build the dictionary.
     int dictSize = 256;
-    std::map<std::string,int> dictionary;
-    for (int i = 0; i < 256; i++)
+    std::map<std::string, int> dictionary;
+    for (int i = 0; i < 256; i++) {
         dictionary[std::string(1, i)] = i;
-
+    }
     std::string w;
     for (std::string::const_iterator it = uncompressed.begin();
          it != uncompressed.end(); ++it) {
         char c = *it;
         std::string wc = w + c;
-        if (dictionary.count(wc))
+        if (dictionary.count(wc)) {
             w = wc;
-        else {
+        } else {
             *result++ = dictionary[w];
             // Add wc to the dictionary.
             dictionary[wc] = dictSize++;
@@ -42,16 +44,22 @@ Iterator compress(const std::string &uncompressed, Iterator result) {
     return result;
 }
 
+std::vector<int> Compress(const std::string &uncompressed) {
+    std::vector<int> compressed;
+    Compress(uncompressed, std::back_inserter(compressed));
+    return compressed;
+}
+
 // Decompress a list of output ks to a string.
 // "begin" and "end" must form a valid range of ints
 template <typename Iterator>
-std::string decompress(Iterator begin, Iterator end) {
+std::string Decompress(Iterator begin, Iterator end) {
     // Build the dictionary.
     int dictSize = 256;
-    std::map<int,std::string> dictionary;
-    for (int i = 0; i < 256; i++)
+    std::map<int, std::string> dictionary;
+    for (int i = 0; i < 256; i++) {
         dictionary[i] = std::string(1, i);
-
+    }
     std::string w(1, *begin++);
     std::string result = w;
     std::string entry;
@@ -74,57 +82,67 @@ std::string decompress(Iterator begin, Iterator end) {
     return result;
 }
 
-std::string int2BinaryString(int c, int cl) {
+template <typename Iterator>
+std::string Decompress(Iterator it) {
+    return Decompress(it.begin(), it.end());
+}
+
+std::string IntToBinaryString(int c, int cl) {
     std::string p = ""; //a binary code string with code length = cl
-    while (c>0) {
-        if (c%2==0)
-            p="0"+p;
-        else
-            p="1"+p;
-        c=c>>1;
+    while (c > 0) {
+        if (c % 2 == 0) {
+            p = "0" + p;
+        } else {
+            p = "1" + p;
+        }
+        c = c >> 1;
     }
-    int zeros = cl-p.size();
-    if (zeros<0) {
+    int zeros = cl - p.size();
+    if (zeros < 0) {
         std::cout << "\nWarning: Overflow. code is too big to be coded by " << cl <<" bits!\n";
-        p = p.substr(p.size()-cl);
+        p = p.substr(p.size() - cl);
     }
     else {
-        for (int i=0; i<zeros; i++)  //pad 0s to left of the binary code if needed
+        for (int i = 0; i < zeros; i++) {  //pad 0s to left of the binary code if needed
             p = "0" + p;
+        }
     }
     return p;
 }
 
-int binaryString2Int(std::string p) {
+int BinaryStringToInt(std::string p) {
     int code = 0;
-    if (p.size()>0) {
-        if (p.at(0)=='1')
+    if (p.size() > 0) {
+        if (p.at(0) == '1') {
             code = 1;
+        }
         p = p.substr(1);
-        while (p.size()>0) {
+        while (p.size() > 0) {
             code = code << 1;
-            if (p.at(0)=='1')
+            if (p.at(0) == '1') {
                 code++;
+            }
             p = p.substr(1);
         }
     }
     return code;
 }
 
-void binaryIODemo(std::vector<int> compressed) {
+void BinaryIODemo(std::vector<int> compressed) {
     int c = 69;
     int bits = 9;
-    std::string p = int2BinaryString(c, bits);
-    std::cout << "c=" << c <<" : binary string="<<p<<"; back to code=" << binaryString2Int(p)<<"\n";
+    std::string p = IntToBinaryString(c, bits);
+    std::cout << "c=" << c <<" : binary string="<<p<<"; back to code=" << BinaryStringToInt(p)<<"\n";
 
     std::string bcode= "";
     for (std::vector<int>::iterator it = compressed.begin() ; it != compressed.end(); ++it) {
-        if (*it<256)
+        if (*it < 256) {
             bits = 8;
-        else
+        } else {
             bits = 9;
-        p = int2BinaryString(*it, bits);
-        std::cout << "c=" << *it <<" : binary string="<<p<<"; back to code=" << binaryString2Int(p)<<"\n";
+        }
+        p = IntToBinaryString(*it, bits);
+        std::cout << "c=" << *it <<" : binary string="<<p<<"; back to code=" << BinaryStringToInt(p)<<"\n";
         bcode+=p;
     }
 
@@ -144,7 +162,7 @@ void binaryIODemo(std::vector<int> compressed) {
         for (int j = 0; j < 8; j++) {
             b = b<<1;
             if (bcode.at(i+j) == '1')
-                b+=1;
+                b++;
         }
         char c = (char) (b & 255); //save the string byte by byte
         myfile.write(&c, 1);
