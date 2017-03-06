@@ -1,3 +1,7 @@
+/*
+  This code is derived for UA CS435 from LZW@RosettaCode
+*/
+
 #include <string>
 #include <map>
 #include <iostream>
@@ -7,36 +11,28 @@
 #include <vector> 
 #include <sys/stat.h>
 
-
-/*
-  This code is derived for UA CS435 from LZW@RosettaCode
-*/
-
 int BinaryStringToInt(std::string);
 std::string IntToBinaryString(int, int);
 
 const int ASCII_SIZE = 256;
 const int BIT_SIZE_LIMIT = 16;
 
-// Compress a string to a list of output symbols.
-// The result will be written to the output iterator
-// starting at "result"; the final iterator is returned.
+// Compresses a given string to a binary sequence
 std::string Compress(const std::string &uncompressed) {
-    // Build the dictionary.
+
     int dictSize = 256;
     int bitSize = 9;
     std::map<std::string, int> dictionary;
     for (int i = 0; i < ASCII_SIZE; i++) {
         dictionary[std::string(1, i)] = i;
     }
+
     std::string output = "";
     std::string w;
-    int i = 0;
-    for (std::string::const_iterator it = uncompressed.begin(); it != uncompressed.end(); ++it) {
-        if (i++ > 329504) {
-//            std::cout << "";
-        }
-        char c = *it;
+    double r0 = -1;
+
+    for (int i = 0; i < uncompressed.length(); i++) {
+        char c = uncompressed[i];
         std::string wc = w + c;
         if (dictionary.count(wc)) {
             w = wc;
@@ -47,51 +43,31 @@ std::string Compress(const std::string &uncompressed) {
                 if (dictSize >= pow(2, bitSize)) {
                     ++bitSize;
                 }
+            } else {
+                if (r0 == -1) {
+                    r0 = (i + 1) * 8.0 / output.length();
+                }
+                double r1 = (i + 1) * 8.0 / output.length();
+                if ((r0 / r1) > 1.05) {
+                    r0 = -1;
+                    dictionary.clear();
+                    dictSize = 256;
+                    bitSize = 9;
+                    for (int i = 0; i < ASCII_SIZE; i++) {
+                        dictionary[std::string(1, i)] = i;
+                    }
+                }
             }
-            // Add wc to the dictionary.
             w = std::string(1, c);
         }
     }
 
-    // Output the code for w.
     if (!w.empty())
         output += IntToBinaryString(dictionary[w], bitSize);
     return output;
 }
 
-//
-//// Decompress a list of output ks to a string.
-//// "begin" and "end" must form a valid range of ints
-//template <typename Iterator>
-//std::string Decompress(Iterator begin, Iterator end) {
-//    // Build the dictionary.
-//    int dictSize = 256;
-//    std::map<int, std::string> dictionary;
-//    for (int i = 0; i < ASCII_SIZE; i++) {
-//        dictionary[i] = std::string(1, i);
-//    }
-//    std::string w(1, *begin++);
-//    std::string result = w;
-//    std::string entry;
-//    for ( ; begin != end; begin++) {
-//        int k = *begin;
-//        if (dictionary.count(k))
-//            entry = dictionary[k];
-//        else if (k == dictSize)
-//            entry = w + w[0];
-//        else
-//            throw "Bad compressed k";
-//
-//        result += entry;
-//
-//        // Add w+entry[0] to the dictionary.
-//        dictionary[dictSize++] = w + entry[0];
-//
-//        w = entry;
-//    }
-//    return result;
-//}
-
+// Decompresses a given binary sequence to a string
 std::string Decompress(std::string compressed) {
     int dictSize = 256;
     std::map<int, std::string> dictionary;
@@ -108,15 +84,16 @@ std::string Decompress(std::string compressed) {
             ++bitSize;
         }
         int k = BinaryStringToInt(compressed.substr(i, bitSize));
+        if (k == 0)
+            break;
 
-
-        if (dictionary.count(k))
+        if (dictionary.count(k)) {
             entry = dictionary[k];
-        else if (k == dictSize)
+        } else if (k == dictSize) {
             entry = w + w[0];
-        else
+        } else {
             throw "Bad compressed k";
-
+        }
         result += entry;
         if (bitSize <= BIT_SIZE_LIMIT) {
             // Add w+entry[0] to the dictionary.
@@ -125,15 +102,9 @@ std::string Decompress(std::string compressed) {
                 ++bitSize;
             }
         }
-
         w = entry;
     }
     return result;
-}
-
-template <typename Iterator>
-std::string Decompress(Iterator it) {
-    return Decompress(it.begin(), it.end());
 }
 
 std::string IntToBinaryString(int c, int cl) {
@@ -175,76 +146,4 @@ int BinaryStringToInt(std::string p) {
         }
     }
     return code;
-}
-
-void BinaryIODemo(std::vector<int> compressed) {
-    int c = 69;
-    int bits = 9;
-    std::string p = IntToBinaryString(c, bits);
-    std::cout << "c=" << c <<" : binary string="<<p<<"; back to code=" << BinaryStringToInt(p)<<"\n";
-
-    std::string bcode= "";
-    for (std::vector<int>::iterator it = compressed.begin() ; it != compressed.end(); ++it) {
-        if (*it < 256) {
-            bits = 8;
-        } else {
-            bits = 9;
-        }
-        p = IntToBinaryString(*it, bits);
-        std::cout << "c=" << *it <<" : binary string="<<p<<"; back to code=" << BinaryStringToInt(p)<<"\n";
-        bcode+=p;
-    }
-
-    //writing to file
-    std::cout << "string 2 save : "<<bcode << "\n";
-    std::string fileName = "example435.lzw";
-    std::ofstream myfile;
-    myfile.open(fileName.c_str(),  std::ios::binary);
-
-    std::string zeros = "00000000";
-    if (bcode.size()%8!=0) //make sure the length of the binary string is a multiple of 8
-        bcode += zeros.substr(0, 8-bcode.size()%8);
-
-    int b;
-    for (int i = 0; i < bcode.size(); i+=8) {
-        b = 1;
-        for (int j = 0; j < 8; j++) {
-            b = b<<1;
-            if (bcode.at(i+j) == '1')
-                b++;
-        }
-        char c = (char) (b & 255); //save the string byte by byte
-        myfile.write(&c, 1);
-    }
-    myfile.close();
-
-    //reading from a file
-    std::ifstream myfile2;
-    myfile2.open (fileName.c_str(),  std::ios::binary);
-
-    struct stat filestatus;
-    stat(fileName.c_str(), &filestatus );
-    long fsize = filestatus.st_size; //get the size of the file in bytes
-
-    char c2[fsize];
-    myfile2.read(c2, fsize);
-
-    std::string s = "";
-    long count = 0;
-    while(count<fsize) {
-        unsigned char uc =  (unsigned char) c2[count];
-        std::string p = ""; //a binary string
-        for (int j=0; j<8 && uc>0; j++) {
-            if (uc%2==0)
-                p="0"+p;
-            else
-                p="1"+p;
-            uc=uc>>1;
-        }
-        p = zeros.substr(0, 8-p.size()) + p; //pad 0s to left if needed
-        s+= p;
-        count++;
-    }
-    myfile2.close();
-    std::cout << " saved string : "<<s << "\n";
 }

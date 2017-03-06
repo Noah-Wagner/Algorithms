@@ -1,25 +1,36 @@
+/*
+ * Copyright (c) 2017 Noah Wagner.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <iostream>
 #include <vector>
-#include <string>
-#include <iostream>
 #include <sstream>
-#include <exception>
 #include <cassert>
 #include "LZW.cpp"
 
+// Prototypes
 std::string GetFileName(std::string);
-std::string SerializeCompressed(std::vector<int> compressed);
-std::vector<int> ParseCompressed(std::string);
 void WriteDecompressed(std::string, std::string);
 std::string ReadCompressed(std::string);
-void WriteCompressed(std::string compressed, std::string fileName);
-
 void RunCompression(std::string fileName) ;
-
 void RunExpansion(std::string basic_string);
+std::string ReadFile(std::string fileName) ;
+void WriteCompressed(std::string compressed, std::string fileName) ;
 
 int main(int argc, char *argv[]) {
-
     if (argc != 3) {
         std::cout << "Usage: lzw c/e <file_name>";
         return -1;
@@ -29,12 +40,7 @@ int main(int argc, char *argv[]) {
 
     switch (*argv[1]) {
         case 'c':
-            try {
-                RunCompression(fileName);
-            } catch (std::exception & e)
-            {
-                std::cout << e.what() << '\n';
-            }
+            RunCompression(fileName);
             break;
         case 'e':
             RunExpansion(fileName);
@@ -46,36 +52,29 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+// Reads the uncompressed file, compresses the contents, and writes it to fileName.lzw
+void RunCompression(std::string fileName) {
+    std::string file_contents = ReadFile(fileName);
+    std::string compressed = Compress(file_contents);
+    assert(file_contents == Decompress(compressed));
+    WriteCompressed(compressed, GetFileName(fileName) + ".lzw");
+}
+
+// Reads the compressed file, decompresses the contents, and writes it to fileName2
 void RunExpansion(std::string fileName) {
     std::string decompressed = Decompress(ReadCompressed(fileName));
     std::cout << decompressed;
-//    WriteDecompressed(decompressed, GetFileName(fileName) + '2');
+    WriteDecompressed(decompressed, GetFileName(fileName) + '2');
 }
 
+// Reads the file given from fileName
 std::string ReadFile(std::string fileName) {
     std::ifstream file(fileName);
     return std::string((std::istreambuf_iterator<char>(file)),
                               std::istreambuf_iterator<char>());
 }
 
-void RunCompression(std::string fileName) {
-
-    std::string file_contents = ReadFile(fileName);
-    std::string compressed = Compress(file_contents);
-    WriteCompressed(compressed, GetFileName(fileName) + ".lzw");
-
-    std::cout << "Original: " << file_contents << '\n';
-    std::string decompressed = Decompress(compressed);
-    std::cout << "After:    " << decompressed;
-    assert(file_contents == decompressed);
-}
-
-std::string GetFileName(std::string file) {
-    return file.substr(0, file.find_last_of('.'));
-}
-
-
-
+// Writes the compressed bit sequence to fileName
 void WriteCompressed(std::string compressed, std::string fileName) {
     std::ofstream myfile;
     myfile.open(fileName,  std::ios::binary);
@@ -83,7 +82,6 @@ void WriteCompressed(std::string compressed, std::string fileName) {
     std::string zeros = "00000000";
     if (compressed.size() % 8 != 0) //make sure the length of the binary string is a multiple of 8
         compressed += zeros.substr(0, 8-compressed.size()%8);
-//    std::cout << "Write: " << compressed;
     int b;
     for (int i = 0; i < compressed.size(); i += 8) {
         b = 1;
@@ -99,26 +97,7 @@ void WriteCompressed(std::string compressed, std::string fileName) {
     myfile.close();
 }
 
-
-void WriteDecompressed(std::string decompressed, std::string fileName) {
-    std::ofstream file(fileName);
-    if (file.is_open()) {
-        file << decompressed;
-        file.close();
-    }
-}
-
-//std::vector<int> ParseCompressed(std::string str) {
-//    std::vector<int> compressed;
-//    int bits = 9;
-//    for (int i = 0; i < str.length(); i += 8) {
-//        std::string test = str.substr(i, 8);
-//        int thing = BinaryStringToInt(test);
-//        compressed.push_back(thing);
-//    }
-//    return compressed;
-//}
-
+// Reads the compressed bit sequence from fileName
 std::string ReadCompressed(std::string fileName) {
     std::string zeros = "00000000";
     std::ifstream myfile2;
@@ -141,7 +120,7 @@ std::string ReadCompressed(std::string fileName) {
                 p="0"+p;
             else
                 p="1"+p;
-            uc=uc>>1;
+            uc=uc >> 1;
         }
         p = zeros.substr(0, 8-p.size()) + p; //pad 0s to left if needed
         s+= p;
@@ -149,4 +128,18 @@ std::string ReadCompressed(std::string fileName) {
     }
     myfile2.close();
     return s;
+}
+
+// Writes the decompressed string to fileName
+void WriteDecompressed(std::string decompressed, std::string fileName) {
+    std::ofstream file(fileName);
+    if (file.is_open()) {
+        file << decompressed;
+        file.close();
+    }
+}
+
+// Returns fileName without extension
+std::string GetFileName(std::string file) {
+    return file.substr(0, file.find_last_of('.'));
 }
