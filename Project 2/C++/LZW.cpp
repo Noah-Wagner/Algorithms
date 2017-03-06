@@ -20,24 +20,22 @@ const int x = 3;
 // Compress a string to a list of output symbols.
 // The result will be written to the output iterator
 // starting at "result"; the final iterator is returned.
-template <typename Iterator>
-Iterator Compress(const std::string &uncompressed, Iterator result) {
+std::string Compress(const std::string &uncompressed) {
     // Build the dictionary.
     int dictSize = 256;
     std::map<std::string, int> dictionary;
     for (int i = 0; i < 256; i++) {
         dictionary[std::string(1, i)] = i;
     }
+    std::string output = "";
     std::string w;
-    for (std::string::const_iterator it = uncompressed.begin();
-         it != uncompressed.end(); ++it) {
+    for (std::string::const_iterator it = uncompressed.begin(); it != uncompressed.end(); ++it) {
         char c = *it;
         std::string wc = w + c;
         if (dictionary.count(wc)) {
             w = wc;
         } else {
-//            std::cout << "Dict = " << dictionary[w] << '\n';
-            *result++ = dictionary[w];
+            output += IntToBinaryString(dictionary[w], 9);
             // Add wc to the dictionary.
             dictionary[wc] = dictSize++;
             w = std::string(1, c);
@@ -46,8 +44,8 @@ Iterator Compress(const std::string &uncompressed, Iterator result) {
 
     // Output the code for w.
     if (!w.empty())
-        *result++ = dictionary[w];
-    return result;
+        output += IntToBinaryString(dictionary[w], 9);
+    return output;
 }
 
 std::string SerializeCompressed(std::vector<int> compressed) {
@@ -64,12 +62,6 @@ std::string SerializeCompressed(std::vector<int> compressed) {
 //        binString+="00000000";
     }
     return binString;
-}
-
-std::string Compress(const std::string &uncompressed) {
-    std::vector<int> compressed;
-    Compress(uncompressed, std::back_inserter(compressed));
-    return SerializeCompressed(compressed);
 }
 
 // Decompress a list of output ks to a string.
