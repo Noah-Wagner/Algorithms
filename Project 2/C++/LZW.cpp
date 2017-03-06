@@ -6,10 +6,14 @@
 #include <vector> 
 #include <sys/stat.h>
 
+
 /*
   This code is derived for UA CS435 from LZW@RosettaCode
 */
 
+int BinaryStringToInt(std::string);
+
+const int x = 3;
 
 
 // Compress a string to a list of output symbols.
@@ -31,6 +35,7 @@ Iterator Compress(const std::string &uncompressed, Iterator result) {
         if (dictionary.count(wc)) {
             w = wc;
         } else {
+//            std::cout << "Dict = " << dictionary[w] << '\n';
             *result++ = dictionary[w];
             // Add wc to the dictionary.
             dictionary[wc] = dictSize++;
@@ -65,6 +70,37 @@ std::string Decompress(Iterator begin, Iterator end) {
     std::string entry;
     for ( ; begin != end; begin++) {
         int k = *begin;
+        if (dictionary.count(k))
+            entry = dictionary[k];
+        else if (k == dictSize)
+            entry = w + w[0];
+        else
+            throw "Bad compressed k";
+
+        result += entry;
+
+        // Add w+entry[0] to the dictionary.
+        dictionary[dictSize++] = w + entry[0];
+
+        w = entry;
+    }
+    return result;
+}
+
+std::string Decompress(std::string compressed) {
+    int dictSize = 256;
+    std::map<int, std::string> dictionary;
+    for (int i = 0; i < 256; i++) {
+        dictionary[i] = std::string(1, i);
+    }
+    int bit = 9;
+    std::string w = dictionary[BinaryStringToInt(compressed.substr(0, bit))];
+    std::string result = w;
+    std::string entry;
+
+    for (int i = bit; i < compressed.length(); i+= bit) {
+
+        int k = BinaryStringToInt(compressed.substr(i, bit));
         if (dictionary.count(k))
             entry = dictionary[k];
         else if (k == dictSize)
