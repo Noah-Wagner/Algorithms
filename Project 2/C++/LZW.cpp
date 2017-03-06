@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
+#include <math.h>
 #include <vector> 
 #include <sys/stat.h>
 
@@ -14,8 +15,8 @@
 int BinaryStringToInt(std::string);
 std::string IntToBinaryString(int, int);
 
-const int x = 3;
-
+const int ASCII_SIZE = 256;
+const int BIT_SIZE_LIMIT = 16;
 
 // Compress a string to a list of output symbols.
 // The result will be written to the output iterator
@@ -23,78 +24,73 @@ const int x = 3;
 std::string Compress(const std::string &uncompressed) {
     // Build the dictionary.
     int dictSize = 256;
+    int bitSize = 9;
     std::map<std::string, int> dictionary;
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < ASCII_SIZE; i++) {
         dictionary[std::string(1, i)] = i;
     }
     std::string output = "";
     std::string w;
+    int i = 0;
     for (std::string::const_iterator it = uncompressed.begin(); it != uncompressed.end(); ++it) {
+        if (i++ > 329504) {
+//            std::cout << "";
+        }
         char c = *it;
         std::string wc = w + c;
         if (dictionary.count(wc)) {
             w = wc;
         } else {
-            output += IntToBinaryString(dictionary[w], 9);
+            output += IntToBinaryString(dictionary[w], bitSize);
+            if (bitSize <= BIT_SIZE_LIMIT) {
+                dictionary[wc] = dictSize++;
+                if (dictSize >= pow(2, bitSize)) {
+                    ++bitSize;
+                }
+            }
             // Add wc to the dictionary.
-            dictionary[wc] = dictSize++;
             w = std::string(1, c);
         }
     }
 
     // Output the code for w.
     if (!w.empty())
-        output += IntToBinaryString(dictionary[w], 9);
+        output += IntToBinaryString(dictionary[w], bitSize);
     return output;
 }
 
-std::string SerializeCompressed(std::vector<int> compressed) {
-    std::string binString = "";
-    std::string p;
-    for (std::vector<int>::iterator it = compressed.begin() ; it != compressed.end(); ++it) {
-//        if (*it < 256) {
-//            p = IntToBinaryString(*it, 8);
-//        } else {
-//            p = IntToBinaryString(*it, 9);
-//        }
-        p = IntToBinaryString(*it, 9);
-        binString+=p;
-//        binString+="00000000";
-    }
-    return binString;
-}
-
-// Decompress a list of output ks to a string.
-// "begin" and "end" must form a valid range of ints
-template <typename Iterator>
-std::string Decompress(Iterator begin, Iterator end) {
-    // Build the dictionary.
-    int dictSize = 256;
-    std::map<int, std::string> dictionary;
-    for (int i = 0; i < 256; i++) {
-        dictionary[i] = std::string(1, i);
-    }
-    std::string w(1, *begin++);
-    std::string result = w;
-    std::string entry;
-    for ( ; begin != end; begin++) {
-        int k = *begin;
-        if (dictionary.count(k))
-            entry = dictionary[k];
-        else if (k == dictSize)
-            entry = w + w[0];
-        else
-            throw "Bad compressed k";
-
-        result += entry;
-
-        // Add w+entry[0] to the dictionary.
-        dictionary[dictSize++] = w + entry[0];
-
-        w = entry;
-    }
-    return result;
-}
+//
+//// Decompress a list of output ks to a string.
+//// "begin" and "end" must form a valid range of ints
+//template <typename Iterator>
+//std::string Decompress(Iterator begin, Iterator end) {
+//    // Build the dictionary.
+//    int dictSize = 256;
+//    std::map<int, std::string> dictionary;
+//    for (int i = 0; i < ASCII_SIZE; i++) {
+//        dictionary[i] = std::string(1, i);
+//    }
+//    std::string w(1, *begin++);
+//    std::string result = w;
+//    std::string entry;
+//    for ( ; begin != end; begin++) {
+//        int k = *begin;
+//        if (dictionary.count(k))
+//            entry = dictionary[k];
+//        else if (k == dictSize)
+//            entry = w + w[0];
+//        else
+//            throw "Bad compressed k";
+//
+//        result += entry;
+//
+//        // Add w+entry[0] to the dictionary.
+//        dictionary[dictSize++] = w + entry[0];
+//
+//        w = entry;
+//    }
+//    return result;
+//}
 
 std::string Decompress(std::string compressed) {
     int dictSize = 256;
@@ -102,14 +98,18 @@ std::string Decompress(std::string compressed) {
     for (int i = 0; i < 256; i++) {
         dictionary[i] = std::string(1, i);
     }
-    int bit = 9;
-    std::string w = dictionary[BinaryStringToInt(compressed.substr(0, bit))];
+    int bitSize = 9;
+    std::string w = dictionary[BinaryStringToInt(compressed.substr(0, bitSize))];
     std::string result = w;
     std::string entry;
 
-    for (int i = bit; i < compressed.length(); i+= bit) {
+    for (int i = bitSize; i < compressed.length(); i+= bitSize) {
+        if (dictSize >= pow(2, bitSize) - 1) {
+            ++bitSize;
+        }
+        int k = BinaryStringToInt(compressed.substr(i, bitSize));
 
-        int k = BinaryStringToInt(compressed.substr(i, bit));
+
         if (dictionary.count(k))
             entry = dictionary[k];
         else if (k == dictSize)
@@ -118,9 +118,13 @@ std::string Decompress(std::string compressed) {
             throw "Bad compressed k";
 
         result += entry;
-
-        // Add w+entry[0] to the dictionary.
-        dictionary[dictSize++] = w + entry[0];
+        if (bitSize <= BIT_SIZE_LIMIT) {
+            // Add w+entry[0] to the dictionary.
+            dictionary[dictSize++] = w + entry[0];
+            if (dictSize >= pow(2, bitSize)) {
+                ++bitSize;
+            }
+        }
 
         w = entry;
     }

@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <exception>
 #include <cassert>
 #include "LZW.cpp"
 
@@ -13,8 +14,11 @@ void WriteDecompressed(std::string, std::string);
 std::string ReadCompressed(std::string);
 void WriteCompressed(std::string compressed, std::string fileName);
 
-int main(int argc, char *argv[]) {
+void RunCompression(std::string fileName) ;
 
+void RunExpansion(std::string basic_string);
+
+int main(int argc, char *argv[]) {
 
     if (argc != 3) {
         std::cout << "Usage: lzw c/e <file_name>";
@@ -24,29 +28,46 @@ int main(int argc, char *argv[]) {
     std::string fileName = argv[2];
 
     switch (*argv[1]) {
-        case 'c': {
-            std::ifstream file(fileName);
-            std::string file_contents((std::istreambuf_iterator<char>(file)),
-                                       std::istreambuf_iterator<char>());
-            std::string compressed = Compress(file_contents);
-            WriteCompressed(compressed, GetFileName(fileName) + ".lzw");
-
-            std::cout << "Original: " << file_contents << '\n';
-            std::string decompressed = Decompress(compressed);
-            std::cout << "After:    " << decompressed;
-            assert(file_contents == decompressed);
-
+        case 'c':
+            try {
+                RunCompression(fileName);
+            } catch (std::exception & e)
+            {
+                std::cout << e.what() << '\n';
+            }
             break;
-        }
         case 'e':
-            std::string compressedRead = ReadCompressed(fileName);
-            std::string decompressed = Decompress(compressedRead);
-            std::cout << decompressed;
-//            WriteDecompressed(decompressed, GetFileName(fileName) + '2');
+            RunExpansion(fileName);
             break;
+        default:
+            return -1;
     }
 
     return 0;
+}
+
+void RunExpansion(std::string fileName) {
+    std::string decompressed = Decompress(ReadCompressed(fileName));
+    std::cout << decompressed;
+//    WriteDecompressed(decompressed, GetFileName(fileName) + '2');
+}
+
+std::string ReadFile(std::string fileName) {
+    std::ifstream file(fileName);
+    return std::string((std::istreambuf_iterator<char>(file)),
+                              std::istreambuf_iterator<char>());
+}
+
+void RunCompression(std::string fileName) {
+
+    std::string file_contents = ReadFile(fileName);
+    std::string compressed = Compress(file_contents);
+    WriteCompressed(compressed, GetFileName(fileName) + ".lzw");
+
+    std::cout << "Original: " << file_contents << '\n';
+    std::string decompressed = Decompress(compressed);
+    std::cout << "After:    " << decompressed;
+    assert(file_contents == decompressed);
 }
 
 std::string GetFileName(std::string file) {
