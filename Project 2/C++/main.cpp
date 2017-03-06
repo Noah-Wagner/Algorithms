@@ -22,19 +22,17 @@ int main(int argc, char *argv[]) {
     }
 
     std::string fileName = argv[2];
-    std::vector<int> compressed;
 
     switch (*argv[1]) {
         case 'c': {
             std::ifstream file(fileName);
             std::string file_contents((std::istreambuf_iterator<char>(file)),
                                        std::istreambuf_iterator<char>());
-            compressed = Compress(file_contents);
-            std::string serializedString = SerializeCompressed(compressed);
-            WriteCompressed(serializedString, GetFileName(fileName) + ".lzw");
+            std::string compressed = Compress(file_contents);
+            WriteCompressed(compressed, GetFileName(fileName) + ".lzw");
 
             std::cout << "Original: " << file_contents << '\n';
-            std::string decompressed = Decompress(serializedString);
+            std::string decompressed = Decompress(compressed);
             std::cout << "After:    " << decompressed;
             assert(file_contents == decompressed);
 
@@ -55,21 +53,7 @@ std::string GetFileName(std::string file) {
     return file.substr(0, file.find_last_of('.'));
 }
 
-std::string SerializeCompressed(std::vector<int> compressed) {
-    std::string binString = "";
-    std::string p;
-    for (std::vector<int>::iterator it = compressed.begin() ; it != compressed.end(); ++it) {
-//        if (*it < 256) {
-//            p = IntToBinaryString(*it, 8);
-//        } else {
-//            p = IntToBinaryString(*it, 9);
-//        }
-        p = IntToBinaryString(*it, 9);
-        binString+=p;
-//        binString+="00000000";
-    }
-    return binString;
-}
+
 
 void WriteCompressed(std::string compressed, std::string fileName) {
     std::ofstream myfile;

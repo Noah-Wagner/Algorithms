@@ -12,6 +12,7 @@
 */
 
 int BinaryStringToInt(std::string);
+std::string IntToBinaryString(int, int);
 
 const int x = 3;
 
@@ -49,10 +50,26 @@ Iterator Compress(const std::string &uncompressed, Iterator result) {
     return result;
 }
 
-std::vector<int> Compress(const std::string &uncompressed) {
+std::string SerializeCompressed(std::vector<int> compressed) {
+    std::string binString = "";
+    std::string p;
+    for (std::vector<int>::iterator it = compressed.begin() ; it != compressed.end(); ++it) {
+//        if (*it < 256) {
+//            p = IntToBinaryString(*it, 8);
+//        } else {
+//            p = IntToBinaryString(*it, 9);
+//        }
+        p = IntToBinaryString(*it, 9);
+        binString+=p;
+//        binString+="00000000";
+    }
+    return binString;
+}
+
+std::string Compress(const std::string &uncompressed) {
     std::vector<int> compressed;
     Compress(uncompressed, std::back_inserter(compressed));
-    return compressed;
+    return SerializeCompressed(compressed);
 }
 
 // Decompress a list of output ks to a string.
