@@ -2,6 +2,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import Test.TestDiff;
 import java.util.Scanner;
 
 public class Main {
@@ -24,8 +25,9 @@ public class Main {
 
 		try {
 			PMGImage image = PMGImage.createFromFile(file);
-			SeamCarver.seamCarve(image, vertCount, 0);
+			image = SeamCarver.seamCarve(image, vertCount, 0);
 			image.writeToFileName(getFileWithoutExtension(file.getName()) + "_processed.pgm");
+			Test.TestDiff.compareImages(file.getName(), getFileWithoutExtension(file.getName()) + "_processed.pgm");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
