@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class PMGImage {
@@ -7,6 +8,12 @@ public class PMGImage {
 	final private String NEW_LINE = "\r\n";
 
 	protected int[][] data;
+
+	private void setData(int[][] data) {
+		this.data = data;
+		this.height = data.length;
+		this.width = data[0].length;
+	}
 
 	public int getWidth() {
 		return width;
@@ -18,12 +25,15 @@ public class PMGImage {
 
 	private int width;
 	private int height;
+	private String comment;
 
 	public int getMaxValue() {
 		return maxValue;
 	}
 
 	private int maxValue;
+
+	private PMGImage() {}
 
 	PMGImage(int[][] obj, int maxValue) {
 		this.data = obj;
@@ -35,13 +45,16 @@ public class PMGImage {
 	public static PMGImage createFromFile(File file) throws FileNotFoundException {
 		FileInputStream fStream = new FileInputStream(file);
 		Scanner scanner = new Scanner(fStream);
+		PMGImage image = new PMGImage();
 
-		scanner.nextLine(); // Skip magic number
-		scanner.nextLine(); // Skip comment
+		String test = scanner.nextLine();
+		assert (Objects.equals(test, "P2"));
+
+		image.comment = scanner.nextLine();
 
 		int picWidth = scanner.nextInt();
 		int picHeight = scanner.nextInt();
-		int maxValue = scanner.nextInt();
+		image.maxValue = scanner.nextInt();
 
 		int[][] pixelData = new int[picHeight][picWidth];
 		for (int row = 0; row < picHeight; row++) {
@@ -49,7 +62,9 @@ public class PMGImage {
 				pixelData[row][col] = scanner.nextInt();
 			}
 		}
-		return new PMGImage(pixelData, maxValue);
+		image.setData(pixelData);
+
+		return image;
 	}
 
 	public void writeToFileName(String fName) throws IOException {

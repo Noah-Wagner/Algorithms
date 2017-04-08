@@ -21,13 +21,15 @@ public class Main {
 		int vertCount = Integer.parseInt(args[1]);
 		int horCount = Integer.parseInt(args[2]);
 
+//		TestDiff.compareImages(fileName, fileName);
+
 		File file = new File(fileName);
 
 		try {
 			PMGImage image = PMGImage.createFromFile(file);
 			image = SeamCarver.seamCarve(image, vertCount, 0);
 			image.writeToFileName(getFileWithoutExtension(file.getName()) + "_processed.pgm");
-			Test.TestDiff.compareImages(file.getName(), getFileWithoutExtension(file.getName()) + "_processed.pgm");
+			TestDiff.compareImages("testBalls.pgm", getFileWithoutExtension(file.getName()) + "_processed.pgm");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
