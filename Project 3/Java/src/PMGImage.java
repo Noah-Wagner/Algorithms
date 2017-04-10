@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2017 Noah Wagner.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import java.io.*;
 import java.util.Objects;
 import java.util.Scanner;
@@ -50,10 +66,21 @@ public class PMGImage {
 		String test = scanner.nextLine();
 		assert (Objects.equals(test, "P2"));
 
-		image.comment = scanner.nextLine();
+		String comment = scanner.nextLine();
 
-		int picWidth = scanner.nextInt();
-		int picHeight = scanner.nextInt();
+		int picWidth;
+		int picHeight;
+
+		if(comment.charAt(0) == '#') {
+			image.comment = comment;
+			picWidth = scanner.nextInt();
+			picHeight = scanner.nextInt();
+		} else {
+			String[] temp = comment.split(" ");
+			picWidth = Integer.parseInt(temp[0]);
+			picHeight = Integer.parseInt(temp[1]);
+		}
+
 		image.maxValue = scanner.nextInt();
 
 		int[][] pixelData = new int[picHeight][picWidth];
